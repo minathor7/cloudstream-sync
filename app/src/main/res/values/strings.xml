@@ -692,6 +692,7 @@
     <string name="no_subtitles_loaded">No subtitles loaded yet</string>
     <string name="backup_path_title">Backup folder location</string>
     <string name="custom">Custom</string>
+	
     <!--confirm exit dialog-->
     <string name="confirm_before_exiting_title">Confirm before exiting</string>
     <string name="confirm_before_exiting_desc">Show dialog before exiting the app</string>
@@ -754,4 +755,6 @@
     <string name="top_left">Top left</string>
     <string name="top_center">Top center</string>
     <string name="top_right">Top right</string>
+	<string name="firebase_key">Firebase Sync</string>
+
 </resources>
