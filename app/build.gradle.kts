@@ -1,3 +1,4 @@
+
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jetbrains.dokka.gradle.engine.parameters.KotlinPlatform
 import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
@@ -9,6 +10,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlin.android)
+    // 1. EKLEME: Firebase Google Servisleri Eklentisi
+    id("com.google.gms.google-services")
 }
 
 val javaTarget = JvmTarget.fromTarget(libs.versions.jvmTarget.get())
@@ -18,20 +21,18 @@ val prereleaseStoreFile: File? = File(tmpFilePath).listFiles()?.first()
 fun getGitCommitHash(): String {
     return try {
         val headFile = file("${project.rootDir}/.git/HEAD")
-
-        // Read the commit hash from .git/HEAD
         if (headFile.exists()) {
             val headContent = headFile.readText().trim()
             if (headContent.startsWith("ref:")) {
-                val refPath = headContent.substring(5) // e.g., refs/heads/main
+                val refPath = headContent.substring(5)
                 val commitFile = file("${project.rootDir}/.git/$refPath")
                 if (commitFile.exists()) commitFile.readText().trim() else ""
-            } else headContent // If it's a detached HEAD (commit hash directly)
+            } else headContent
         } else {
-            "" // If .git/HEAD doesn't exist
-        }.take(7) // Return the short commit hash
+            ""
+        }.take(7)
     } catch (_: Throwable) {
-        "" // Just return an empty string if any exception occurs
+        ""
     }
 }
 
@@ -66,27 +67,13 @@ android {
         versionName = "4.6.1"
 
         resValue("string", "commit_hash", getGitCommitHash())
-
         manifestPlaceholders["target_sdk_version"] = libs.versions.targetSdk.get()
 
-        // Reads local.properties
         val localProperties = gradleLocalProperties(rootDir, project.providers)
 
-        buildConfigField(
-            "long",
-            "BUILD_DATE",
-            "${System.currentTimeMillis()}"
-        )
-        buildConfigField(
-            "String",
-            "SIMKL_CLIENT_ID",
-            "\"" + (System.getenv("SIMKL_CLIENT_ID") ?: localProperties["simkl.id"]) + "\""
-        )
-        buildConfigField(
-            "String",
-            "SIMKL_CLIENT_SECRET",
-            "\"" + (System.getenv("SIMKL_CLIENT_SECRET") ?: localProperties["simkl.secret"]) + "\""
-        )
+        buildConfigField("long", "BUILD_DATE", "${System.currentTimeMillis()}")
+        buildConfigField("String", "SIMKL_CLIENT_ID", "\"" + (System.getenv("SIMKL_CLIENT_ID") ?: localProperties["simkl.id"]) + "\"")
+        buildConfigField("String", "SIMKL_CLIENT_SECRET", "\"" + (System.getenv("SIMKL_CLIENT_SECRET") ?: localProperties["simkl.secret"]) + "\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -95,18 +82,12 @@ android {
             isDebuggable = false
             isMinifyEnabled = false
             isShrinkResources = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -135,8 +116,6 @@ android {
     }
 
     java {
-	    // Use Java 17 toolchain even if a higher JDK runs the build.
-        // We still use Java 8 for now which higher JDKs have deprecated.
 	    toolchain {
 		    languageVersion.set(JavaLanguageVersion.of(libs.versions.jdkToolchain.get()))
     	}
@@ -156,6 +135,10 @@ android {
 }
 
 dependencies {
+    // 2. EKLEME: FIREBASE SENKRONİZASYON (Karakter bozulmasını önlemek için)
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-database-ktx")
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.json)
@@ -188,27 +171,27 @@ dependencies {
     implementation(libs.bundles.nextlib)
 
     // PlayBack
-    implementation(libs.colorpicker) // Subtitle Color Picker
-    implementation(libs.newpipeextractor) // For Trailers
-    implementation(libs.juniversalchardet) // Subtitle Decoding
+    implementation(libs.colorpicker)
+    implementation(libs.newpipeextractor)
+    implementation(libs.juniversalchardet)
 
     // UI Stuff
-    implementation(libs.shimmer) // Shimmering Effect (Loading Skeleton)
-    implementation(libs.palette.ktx) // Palette for Images -> Colors
+    implementation(libs.shimmer)
+    implementation(libs.palette.ktx)
     implementation(libs.tvprovider)
-    implementation(libs.overlappingpanels) // Gestures
-    implementation(libs.biometric) // Fingerprint Authentication
-    implementation(libs.previewseekbar.media3) // SeekBar Preview
-    implementation(libs.qrcode.kotlin) // QR Code for PIN Auth on TV
+    implementation(libs.overlappingpanels)
+    implementation(libs.biometric)
+    implementation(libs.previewseekbar.media3)
+    implementation(libs.qrcode.kotlin)
 
     // Extensions & Other Libs
-    implementation(libs.jsoup) // HTML Parser
-    implementation(libs.rhino) // Run JavaScript
-    implementation(libs.fuzzywuzzy) // Library/Ext Searching with Levenshtein Distance
-    implementation(libs.safefile) // To Prevent the URI File Fu*kery
-    coreLibraryDesugaring(libs.desugar.jdk.libs.nio) // NIO Flavor Needed for NewPipeExtractor
-    implementation(libs.conscrypt.android) // To Fix SSL Fu*kery on Android 9
-    implementation(libs.jackson.module.kotlin) // JSON Parser
+    implementation(libs.jsoup)
+    implementation(libs.rhino)
+    implementation(libs.fuzzywuzzy)
+    implementation(libs.safefile)
+    coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
+    implementation(libs.conscrypt.android)
+    implementation(libs.jackson.module.kotlin)
     implementation(libs.zipline)
 
     // Torrent Support
@@ -216,23 +199,19 @@ dependencies {
 
     // Downloading & Networking
     implementation(libs.work.runtime.ktx)
-    implementation(libs.nicehttp) // HTTP Lib
+    implementation(libs.nicehttp)
 
     implementation(project(":library") {
-        // There does not seem to be a good way of getting the android flavor.
         val isDebug = gradle.startParameter.taskRequests.any { task ->
-            task.args.any { arg ->
-                arg.contains("debug", true)
-            }
+            task.args.any { arg -> arg.contains("debug", true) }
         }
-
         this.extra.set("isDebug", isDebug)
     })
 }
 
 tasks.register<Jar>("androidSourcesJar") {
     archiveClassifier.set("sources")
-    from(android.sourceSets.getByName("main").java.srcDirs) // Full Sources
+    from(android.sourceSets.getByName("main").java.srcDirs)
 }
 
 tasks.register<Copy>("copyJar") {
@@ -243,13 +222,10 @@ tasks.register<Copy>("copyJar") {
     )
     into("build/app-classes")
     include("classes.jar", "library-jvm*.jar")
-    // Remove the version
     rename("library-jvm.*.jar", "library-jvm.jar")
 }
 
-// Merge the app classes and the library classes into classes.jar
 tasks.register<Jar>("makeJar") {
-    // Duplicates cause hard to catch errors, better to fail at compile time.
     duplicatesStrategy = DuplicatesStrategy.FAIL
     dependsOn(tasks.getByName("copyJar"))
     from(
@@ -274,11 +250,7 @@ dokka {
     dokkaSourceSets {
         main {
             analysisPlatform = KotlinPlatform.JVM
-            documentedVisibilities(
-                VisibilityModifier.Public,
-                VisibilityModifier.Protected
-            )
-
+            documentedVisibilities(VisibilityModifier.Public, VisibilityModifier.Protected)
             sourceLink {
                 localDirectory = file("..")
                 remoteUrl("https://github.com/recloudstream/cloudstream/tree/master")
