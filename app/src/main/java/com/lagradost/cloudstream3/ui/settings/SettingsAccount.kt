@@ -278,12 +278,25 @@ class SettingsAccount : BasePreferenceFragmentCompat(), BiometricCallback {
             val dialog = builder.show()
             val req =
                 api.inAppLoginRequirement ?: throw ErrorLoadingException("Missing LoginRequirement")
+                        // 1. Önce bu servisin Firebase olup olmadığını kontrol ediyoruz
+            val isFirebase = api.name.contains("Firebase", ignoreCase = true)
+            
+            // 2. Eğer Firebase ise kutucuk isimlerini (Hint) değiştiriyoruz
+            if (isFirebase) {
+                binding.loginUsernameInput.hint = "Firebase Project ID"
+                binding.loginPasswordInput.hint = "Firebase API Key"
+                binding.loginServerInput.hint = "Database URL (https://...)"
+                binding.loginEmailInput.hint = "Firebase App ID"
+            }
+
+            // 3. Hangi kutuların görüneceğini belirliyoruz (Firebase ise hepsini göster)
             val visibilityMap = listOf(
-                binding.loginEmailInput to req.email,
-                binding.loginPasswordInput to req.password,
-                binding.loginServerInput to req.server,
-                binding.loginUsernameInput to req.username
+                binding.loginEmailInput to (req.email || isFirebase),
+                binding.loginPasswordInput to (req.password || isFirebase),
+                binding.loginServerInput to (req.server || isFirebase),
+                binding.loginUsernameInput to (req.username || isFirebase)
             )
+            
 
             if (isLayout(TV or EMULATOR)) {
                 visibilityMap.forEach { (input, isVisible) ->
