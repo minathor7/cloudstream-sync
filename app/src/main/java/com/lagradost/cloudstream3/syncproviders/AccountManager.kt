@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 abstract class AccountManager {
     companion object {
         const val NONE_ID: Int = -1
+        val firebaseApi = FirebaseApi()
         val malApi = MALApi()
         val aniListApi = AniListApi()
         val simklApi = SimklApi()
@@ -58,6 +59,7 @@ abstract class AccountManager {
         }
 
         val allApis = arrayOf(
+            SyncRepo(firebaseApi),
             SyncRepo(malApi),
             SyncRepo(aniListApi),
             SyncRepo(simklApi),
@@ -117,6 +119,7 @@ abstract class AccountManager {
             SubtitleRepo(subDlApi)
         )
         val syncApis = arrayOf(
+            SyncRepo(firebaseApi)
             SyncRepo(malApi),
             SyncRepo(aniListApi),
             SyncRepo(simklApi),
@@ -155,4 +158,5 @@ abstract class AccountManager {
             return "${if (days != 0L) "$days" + "d " else ""}${if (hours != 0L) "$hours" + "h " else ""}${minutes}m"
         }
     }
+
 }
